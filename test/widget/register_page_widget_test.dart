@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:petey_adoption_system/core/services/storage/user_session_service.dart';
 import 'package:petey_adoption_system/features/auth/presentation/pages/register_page.dart';
 import 'package:petey_adoption_system/features/auth/presentation/state/auth_state.dart';
 import 'package:petey_adoption_system/features/auth/presentation/view_model/auth_view_model.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class FakeAuthViewModel extends AuthViewModel {
   @override
@@ -11,9 +13,17 @@ class FakeAuthViewModel extends AuthViewModel {
 }
 
 void main() {
+  late SharedPreferences prefs;
+
+  setUpAll(() async {
+    SharedPreferences.setMockInitialValues({});
+    prefs = await SharedPreferences.getInstance();
+  });
+
   Widget createWidgetUnderTest() {
     return ProviderScope(
       overrides: [
+        sharedPreferencesProvider.overrideWithValue(prefs),
         authViewModelProvider.overrideWith(() => FakeAuthViewModel()),
       ],
       child: const MaterialApp(

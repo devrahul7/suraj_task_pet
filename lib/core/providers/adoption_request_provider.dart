@@ -66,8 +66,10 @@ class AdoptionRequestModel {
 class AdoptionRequestNotifier extends StateNotifier<List<AdoptionRequestModel>> {
   final Ref ref;
 
-  AdoptionRequestNotifier(this.ref) : super([]) {
-    _fetchRequestsFromApi();
+  AdoptionRequestNotifier(this.ref, {bool autoFetch = true}) : super([]) {
+    if (autoFetch) {
+      _fetchRequestsFromApi();
+    }
   }
 
   Future<void> _fetchRequestsFromApi() async {

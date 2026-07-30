@@ -59,8 +59,10 @@ class PetModel {
 class AdminPetsNotifier extends StateNotifier<List<PetModel>> {
   final Ref _ref;
 
-  AdminPetsNotifier(this._ref) : super([]) {
-    _fetchPetsFromApi();
+  AdminPetsNotifier(this._ref, {bool autoFetch = true}) : super([]) {
+    if (autoFetch) {
+      _fetchPetsFromApi();
+    }
   }
 
   Future<void> _fetchPetsFromApi() async {

@@ -43,8 +43,10 @@ class UserModel {
 class AdminUsersNotifier extends StateNotifier<List<UserModel>> {
   final Ref _ref;
 
-  AdminUsersNotifier(this._ref) : super([]) {
-    _fetchUsersFromApi();
+  AdminUsersNotifier(this._ref, {bool autoFetch = true}) : super([]) {
+    if (autoFetch) {
+      _fetchUsersFromApi();
+    }
   }
 
   Future<void> _fetchUsersFromApi() async {

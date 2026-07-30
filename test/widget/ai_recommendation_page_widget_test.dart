@@ -1,12 +1,48 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:petey_adoption_system/core/providers/adoption_request_provider.dart';
+import 'package:petey_adoption_system/core/services/storage/user_session_service.dart';
+import 'package:petey_adoption_system/features/adminDashboard/presentation/pages/admin_pet_screen.dart';
+import 'package:petey_adoption_system/features/adminDashboard/presentation/pages/admin_user_screen.dart';
 import 'package:petey_adoption_system/features/ai/presentation/pages/ai_recommendation_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+class TestPetsNotifier extends AdminPetsNotifier {
+  TestPetsNotifier(super.ref) : super(autoFetch: false) {
+    state = [];
+  }
+}
+
+class TestUsersNotifier extends AdminUsersNotifier {
+  TestUsersNotifier(super.ref) : super(autoFetch: false) {
+    state = [];
+  }
+}
+
+class TestAdoptionNotifier extends AdoptionRequestNotifier {
+  TestAdoptionNotifier(super.ref) : super(autoFetch: false) {
+    state = [];
+  }
+}
 
 void main() {
+  late SharedPreferences prefs;
+
+  setUpAll(() async {
+    SharedPreferences.setMockInitialValues({});
+    prefs = await SharedPreferences.getInstance();
+  });
+
   Widget createWidgetUnderTest() {
-    return const ProviderScope(
-      child: MaterialApp(
+    return ProviderScope(
+      overrides: [
+        sharedPreferencesProvider.overrideWithValue(prefs),
+        adminPetsProvider.overrideWith((ref) => TestPetsNotifier(ref)),
+        adminUsersProvider.overrideWith((ref) => TestUsersNotifier(ref)),
+        adoptionRequestProvider.overrideWith((ref) => TestAdoptionNotifier(ref)),
+      ],
+      child: const MaterialApp(
         home: AiRecommendationPage(),
       ),
     );
@@ -35,10 +71,10 @@ void main() {
       expect(find.text('Have Other Pets'), findsOneWidget);
     });
 
-    testWidgets('4. Renders Get AI Recommendations action button', (tester) async {
+    testWidgets('4. Renders Calculate AI Match action button', (tester) async {
       await tester.pumpWidget(createWidgetUnderTest());
 
-      expect(find.widgetWithText(ElevatedButton, 'Get AI Recommendations'), findsOneWidget);
+      expect(find.widgetWithText(ElevatedButton, 'Calculate AI Match'), findsOneWidget);
     });
   });
 }
