@@ -12,7 +12,7 @@ import { FRONTEND_URL } from "../config/constant";
 import { EmailService } from "./email.service";
 import { ResetPasswordDto } from "../dtos/user.dto";
 import { JwtUtil } from "../utils/jwt";
-import { IUser } from "../models/user.model";
+import User, { IUser } from "../models/user.model";
 
 const userRepository = new UserRepository();
 const emailService = new EmailService();
@@ -88,19 +88,8 @@ export class UserService {
       password: hashedPassword,
       role: "USER",
       favorites: [],
-      emailVerified: false,
+      emailVerified: true,
     });
-
-    await this.sendVerificationEmail(user._id.toString(), user.fullName, user.email);
-
-    void emailService
-      .sendWelcomeEmail({
-        fullName: user.fullName,
-        email: user.email,
-      })
-      .catch((error) => {
-        console.warn("Welcome email delivery failed.", error);
-      });
 
     return this.sanitizeUser(user);
   }
@@ -109,8 +98,15 @@ export class UserService {
    * Login User
    */
   async loginUser(loginData: LoginUserDto) {
-    const user =
-      await userRepository.findByEmailWithPassword(loginData.email);
+    const identifier = loginData.email.toLowerCase().trim();
+    let user = await userRepository.findByEmailWithPassword(identifier);
+
+    if (!user) {
+      const byUsername = await userRepository.findByUsername(identifier);
+      if (byUsername) {
+        user = await User.findById(byUsername._id).select("+password");
+      }
+    }
 
     if (!user) {
       throw new HttpException(400, "Invalid email or password");

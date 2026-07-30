@@ -28,7 +28,7 @@ export class NotificationController {
           limit,
           total: result.total,
           unreadCount: result.unreadCount,
-        }
+        } as any
       );
     } catch (e: any) {
       return ApiResponseHelper.error(res, e.message, e.status || 500);

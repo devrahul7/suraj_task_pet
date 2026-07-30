@@ -9,6 +9,10 @@ export const CreateUserDto = UserSchema.pick({
   username: true,
   email: true,
   password: true,
+  phoneNumber: true,
+  profileImage: true,
+}).partial({
+  phoneNumber: true,
   profileImage: true,
 });
 

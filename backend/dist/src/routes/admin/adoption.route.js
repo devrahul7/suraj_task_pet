@@ -1,0 +1,16 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const adoption_controller_1 = require("../../controllers/admin/adoption.controller");
+const auth_middleware_1 = require("../../middlewares/auth.middleware");
+const validation_middleware_1 = require("../../middlewares/validation.middleware");
+const adoption_dto_1 = require("../../dtos/admin/adoption.dto");
+const router = (0, express_1.Router)();
+const controller = new adoption_controller_1.AdminAdoptionController();
+router.use(auth_middleware_1.authorizedMiddleware, auth_middleware_1.isAdmin);
+router.get("/stats", controller.getAdoptionStats);
+router.get("/export", controller.exportAdoptionData);
+router.get("/status/:status", controller.getApplicationsByStatus);
+router.post("/bulk-approve", (0, validation_middleware_1.validationMiddleware)(adoption_dto_1.BulkApproveDto), controller.bulkApprove);
+router.post("/bulk-reject", (0, validation_middleware_1.validationMiddleware)(adoption_dto_1.BulkRejectDto), controller.bulkReject);
+exports.default = router;

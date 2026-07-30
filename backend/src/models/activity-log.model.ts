@@ -27,13 +27,13 @@ export type ActivityModule =
 
 export interface IActivityLog extends Document {
   _id: mongoose.Types.ObjectId;
-  actorId: mongoose.Types.ObjectId;
+  actorId: mongoose.Types.ObjectId | string;
   actorName: string;
   actorRole: string;
   module: ActivityModule;
   action: ActivityAction;
   description: string;
-  entityId?: mongoose.Types.ObjectId;
+  entityId?: mongoose.Types.ObjectId | string;
   entityType?: string;
   metadata?: Record<string, any>;
   ipAddress?: string;

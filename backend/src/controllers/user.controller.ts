@@ -47,7 +47,7 @@ export class UserController {
       return ApiResponseHelper.error(
         res,
         e.message || "Failed to register user",
-        e.status || 500
+        e.statusCode || e.status || 400
       );
     }
   }

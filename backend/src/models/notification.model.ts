@@ -16,7 +16,7 @@ export type NotificationType =
 
 export interface INotification extends Document {
   _id: mongoose.Types.ObjectId;
-  userId: mongoose.Types.ObjectId;
+  userId: mongoose.Types.ObjectId | string;
   type: NotificationType;
   title: string;
   message: string;

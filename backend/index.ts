@@ -1,10 +1,12 @@
 import app from "./src/app";
 import { PORT as SERVER_PORT } from "./src/config/constant";
 import { connectToMongoDB } from "./src/database/mongodb";
+import { autoSeedAdmin } from "./src/utils/auto-seed";
 
 connectToMongoDB()
-    .then(() => {
+    .then(async () => {
         console.log("MongoDB connection established, starting server...");
+        await autoSeedAdmin();
     })
     .catch((error) => {
         console.error("Failed to connect to MongoDB, server not started.", error);

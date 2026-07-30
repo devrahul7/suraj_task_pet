@@ -1,0 +1,15 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const user_management_controller_1 = require("../../controllers/admin/user-management.controller");
+const auth_middleware_1 = require("../../middlewares/auth.middleware");
+const validation_middleware_1 = require("../../middlewares/validation.middleware");
+const user_management_dto_1 = require("../../dtos/admin/user-management.dto");
+const router = (0, express_1.Router)();
+const controller = new user_management_controller_1.AdminUserManagementController();
+router.use(auth_middleware_1.authorizedMiddleware, auth_middleware_1.isAdmin);
+router.get("/", controller.getUsersWithFilters);
+router.get("/stats", controller.getUserManagementStats);
+router.patch("/:id/suspend", (0, validation_middleware_1.validationMiddleware)(user_management_dto_1.SuspendUserDto), controller.suspendUser);
+router.patch("/:id/activate", controller.activateUser);
+exports.default = router;

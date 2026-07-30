@@ -1,0 +1,10 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const chat_session_controller_1 = require("../controllers/chat-session.controller");
+const auth_middleware_1 = require("../middlewares/auth.middleware");
+const router = (0, express_1.Router)();
+const controller = new chat_session_controller_1.ChatSessionController();
+router.get("/sessions", auth_middleware_1.authorizedMiddleware, controller.getSessions);
+router.delete("/sessions/:sessionId", auth_middleware_1.authorizedMiddleware, controller.deleteSession);
+exports.default = router;

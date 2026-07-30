@@ -25,6 +25,7 @@ import adminUserManagementRoute from './routes/admin/user-management.route';
 import adminAdoptionRoute from './routes/admin/adoption.route';
 import notificationRoute from './routes/notification.routes';
 import chatSessionRoute from './routes/chat-session.routes';
+import paymentRoute from './routes/payment.route';
 
 const app: Application = express();
 let coresOptions = {
@@ -58,6 +59,7 @@ app.use('/api/v1/ai', chatSessionRoute);
 app.use('/api/v1/blogs', blogRouter);
 app.use('/api/v1/adoptions', adoptionRouter);
 app.use('/api/v1/notifications', notificationRoute);
+app.use('/api/v1/payments', paymentRoute);
 
 app.use('/api/v1/vet', vetRouter);
 app.use('/api/v1/appointments', vetAppointmentRouter);

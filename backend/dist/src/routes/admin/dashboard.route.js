@@ -1,0 +1,16 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const dashboard_controller_1 = require("../../controllers/admin/dashboard.controller");
+const auth_middleware_1 = require("../../middlewares/auth.middleware");
+const router = (0, express_1.Router)();
+const controller = new dashboard_controller_1.AdminDashboardController();
+router.use(auth_middleware_1.authorizedMiddleware, auth_middleware_1.isAdmin);
+router.get("/", controller.getFullDashboard);
+router.get("/overview", controller.getOverview);
+router.get("/monthly-reports", controller.getMonthlyReports);
+router.get("/recent-activities", controller.getRecentActivities);
+router.get("/activity-logs", controller.getActivityLogs);
+router.get("/activity-stats", controller.getActivityStats);
+router.get("/adoption-trends", controller.getAdoptionTrends);
+exports.default = router;
