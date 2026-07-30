@@ -2,6 +2,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:petey_adoption_system/core/api/api_client.dart';
+import 'package:petey_adoption_system/core/api/api_endpoints.dart';
 
 // ─── Model ───────────────────────────────────────────────────────────────────
 class PetModel {
@@ -51,9 +53,13 @@ class PetModel {
   }
 }
 
+
+
 // ─── Notifier ────────────────────────────────────────────────────────────────
 class AdminPetsNotifier extends StateNotifier<List<PetModel>> {
-  AdminPetsNotifier()
+  final Ref _ref;
+
+  AdminPetsNotifier(this._ref)
       : super([
           PetModel(
             id: 'p1',
@@ -88,7 +94,50 @@ class AdminPetsNotifier extends StateNotifier<List<PetModel>> {
             description: 'Calm and affectionate cat ideal for apartment living.',
             imagePath: 'assets/images/pet2.jpeg',
           ),
-        ]);
+        ]) {
+    _fetchPetsFromApi();
+  }
+
+  Future<void> _fetchPetsFromApi() async {
+    try {
+      final apiClient = _ref.read(apiClientProvider);
+      final response = await apiClient.get(ApiEndpoints.pets);
+      if (response.statusCode == 200 && response.data != null) {
+        final data = response.data;
+        List<dynamic> petsJson = [];
+        if (data is Map<String, dynamic>) {
+          if (data['data'] is List) {
+            petsJson = data['data'];
+          } else if (data['data'] is Map && data['data']['pets'] is List) {
+            petsJson = data['data']['pets'];
+          } else if (data['pets'] is List) {
+            petsJson = data['pets'];
+          }
+        } else if (data is List) {
+          petsJson = data;
+        }
+
+        final remotePets = petsJson.map((json) {
+          return PetModel(
+            id: json['_id'] ?? json['id'] ?? 'p_${DateTime.now().millisecondsSinceEpoch}',
+            name: json['name'] ?? json['petName'] ?? 'Pet',
+            species: json['species'] ?? 'Dog',
+            breed: json['breed'] ?? 'Mixed',
+            age: json['age']?.toString() ?? '1 Year',
+            gender: json['gender'] ?? 'Unknown',
+            status: (json['status'] ?? 'AVAILABLE').toString().toUpperCase(),
+            description: json['description'] ?? '',
+            imagePath: json['image'] ?? json['imagePath'] ?? 'assets/images/pet.jpg',
+          );
+        }).toList();
+
+        // Update state to match real backend database (empty array if MongoDB cleared)
+        state = remotePets;
+      }
+    } catch (_) {
+      // Backend offline or error -> keep initial state fallback
+    }
+  }
 
   void addPet(PetModel pet) => state = [pet, ...state];
 
@@ -111,7 +160,7 @@ class AdminPetsNotifier extends StateNotifier<List<PetModel>> {
 
 final adminPetsProvider =
     StateNotifierProvider<AdminPetsNotifier, List<PetModel>>(
-  (ref) => AdminPetsNotifier(),
+  (ref) => AdminPetsNotifier(ref),
 );
 
 // ─── Screen ──────────────────────────────────────────────────────────────────

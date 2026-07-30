@@ -1,4 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:petey_adoption_system/core/api/api_client.dart';
+import 'package:petey_adoption_system/core/api/api_endpoints.dart';
 import 'package:petey_adoption_system/core/providers/notification_provider.dart';
 import 'package:petey_adoption_system/features/adminDashboard/presentation/pages/admin_pet_screen.dart';
 
@@ -111,7 +113,54 @@ class AdoptionRequestNotifier extends StateNotifier<List<AdoptionRequestModel>> 
             requestDate: '2026-07-28',
             adminNotes: 'Payment verified via Stripe. Pet officially adopted!',
           ),
-        ]);
+        ]) {
+    _fetchRequestsFromApi();
+  }
+
+  Future<void> _fetchRequestsFromApi() async {
+    try {
+      final apiClient = ref.read(apiClientProvider);
+      final response = await apiClient.get(ApiEndpoints.adoptionRequests);
+      if (response.statusCode == 200 && response.data != null) {
+        final data = response.data;
+        List<dynamic> reqsJson = [];
+        if (data is Map<String, dynamic>) {
+          if (data['data'] is List) {
+            reqsJson = data['data'];
+          } else if (data['requests'] is List) {
+            reqsJson = data['requests'];
+          }
+        } else if (data is List) {
+          reqsJson = data;
+        }
+
+        final remoteReqs = reqsJson.map((json) {
+          return AdoptionRequestModel(
+            id: json['_id'] ?? json['id'] ?? 'req_${DateTime.now().millisecondsSinceEpoch}',
+            userId: json['userId'] ?? json['user'] ?? 'user',
+            userName: json['userName'] ?? json['userFullName'] ?? 'Customer',
+            userEmail: json['userEmail'] ?? json['email'] ?? 'user@petey.com',
+            petId: json['petId'] ?? json['pet'] ?? 'pet',
+            petName: json['petName'] ?? 'Pet',
+            breed: json['breed'] ?? 'Mixed',
+            species: json['species'] ?? 'Dog',
+            image: json['image'] ?? 'assets/images/pet.jpg',
+            fee: (json['fee'] as num?)?.toDouble() ?? 150.0,
+            status: (json['status'] ?? 'PENDING').toString().toUpperCase(),
+            requestDate: json['requestDate'] ?? json['createdAt']?.toString().split('T')[0] ?? '2026-07-30',
+            visitDate: json['visitDate'],
+            visitType: json['visitType'],
+            adminNotes: json['adminNotes'] ?? 'Request under review',
+          );
+        }).toList();
+
+        // Update state to match backend database (empty if MongoDB cleared)
+        state = remoteReqs;
+      }
+    } catch (_) {
+      // Backend offline -> keep fallback
+    }
+  }
 
   /// Customer submits booking/adoption request
   void addRequest({

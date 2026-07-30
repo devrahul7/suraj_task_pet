@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:petey_adoption_system/core/api/api_client.dart';
 
 class UserModel {
   final String id;
@@ -40,7 +41,9 @@ class UserModel {
 }
 
 class AdminUsersNotifier extends StateNotifier<List<UserModel>> {
-  AdminUsersNotifier()
+  final Ref _ref;
+
+  AdminUsersNotifier(this._ref)
       : super([
           UserModel(
             id: 'u1',
@@ -66,7 +69,63 @@ class AdminUsersNotifier extends StateNotifier<List<UserModel>> {
             role: 'ADMIN',
             createdAt: DateTime.now().subtract(const Duration(days: 30)),
           ),
-        ]);
+        ]) {
+    _fetchUsersFromApi();
+  }
+
+  Future<void> _fetchUsersFromApi() async {
+    try {
+      final apiClient = _ref.read(apiClientProvider);
+      final response = await apiClient.get('/users');
+      if (response.statusCode == 200 && response.data != null) {
+        final data = response.data;
+        List<dynamic> usersJson = [];
+        if (data is Map<String, dynamic>) {
+          if (data['data'] is List) {
+            usersJson = data['data'];
+          } else if (data['data'] is Map && data['data']['users'] is List) {
+            usersJson = data['data']['users'];
+          } else if (data['users'] is List) {
+            usersJson = data['users'];
+          }
+        } else if (data is List) {
+          usersJson = data;
+        }
+
+        final remoteUsers = usersJson.map((json) {
+          final roleStr = (json['role'] ?? 'USER').toString().toUpperCase();
+          return UserModel(
+            id: json['_id'] ?? json['id'] ?? 'u_${DateTime.now().millisecondsSinceEpoch}',
+            fullName: json['fullName'] ?? json['name'] ?? 'User',
+            email: json['email'] ?? 'user@petey.com',
+            phone: json['phone'] ?? json['phoneNumber'] ?? 'N/A',
+            role: roleStr,
+            isActive: json['isActive'] ?? true,
+            createdAt: DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now(),
+          );
+        }).toList();
+
+        // Always preserve master admin account
+        final masterAdmin = UserModel(
+          id: 'u3',
+          fullName: 'Admin User',
+          email: 'admin@petey.com',
+          phone: '9800000000',
+          role: 'ADMIN',
+          createdAt: DateTime.now().subtract(const Duration(days: 30)),
+        );
+
+        final hasAdmin = remoteUsers.any((u) => u.email.toLowerCase() == 'admin@petey.com' || u.role == 'ADMIN');
+        if (!hasAdmin) {
+          remoteUsers.add(masterAdmin);
+        }
+
+        state = remoteUsers;
+      }
+    } catch (_) {
+      // Backend offline -> keep initial state fallback
+    }
+  }
 
   void addUser(UserModel user) => state = [user, ...state];
 
@@ -94,7 +153,7 @@ class AdminUsersNotifier extends StateNotifier<List<UserModel>> {
 
 final adminUsersProvider =
     StateNotifierProvider<AdminUsersNotifier, List<UserModel>>(
-  (ref) => AdminUsersNotifier(),
+  (ref) => AdminUsersNotifier(ref),
 );
 
 class AdminUsersScreen extends ConsumerStatefulWidget {
