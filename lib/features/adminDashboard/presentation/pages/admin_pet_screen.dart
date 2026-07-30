@@ -340,46 +340,41 @@ class _AdminPetsScreenState extends ConsumerState<AdminPetsScreen> {
                     ),
                     const SizedBox(height: 12),
 
-                    // ── Age & Gender (side-by-side) ────────────────────────
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                            controller: ageCtrl,
-                            decoration: InputDecoration(
-                              labelText: 'Age',
-                              hintText: 'e.g. 2 Years',
-                              prefixIcon:
-                                  const Icon(Icons.calendar_today_outlined),
-                              border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(10)),
-                            ),
-                            validator: (v) => v == null || v.trim().isEmpty
-                                ? 'Enter age'
-                                : null,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
-                            initialValue: selectedGender,
-                            decoration: InputDecoration(
-                              labelText: 'Gender',
-                              border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(10)),
-                            ),
-                            items: _genderList
-                                .map((g) => DropdownMenuItem(
-                                    value: g, child: Text(g)))
-                                .toList(),
-                            onChanged: (val) {
-                              if (val != null) {
-                                setDialogState(() => selectedGender = val);
-                              }
-                            },
-                          ),
-                        ),
-                      ],
+                    // ── Age ───────────────────────────────────────────────
+                    TextFormField(
+                      controller: ageCtrl,
+                      decoration: InputDecoration(
+                        labelText: 'Age',
+                        hintText: 'e.g. 2 Years',
+                        prefixIcon:
+                            const Icon(Icons.calendar_today_outlined),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10)),
+                      ),
+                      validator: (v) => v == null || v.trim().isEmpty
+                          ? 'Enter age'
+                          : null,
+                    ),
+                    const SizedBox(height: 12),
+
+                    // ── Gender ────────────────────────────────────────────
+                    DropdownButtonFormField<String>(
+                      initialValue: selectedGender,
+                      decoration: InputDecoration(
+                        labelText: 'Gender',
+                        prefixIcon: const Icon(Icons.wc_outlined),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10)),
+                      ),
+                      items: _genderList
+                          .map((g) => DropdownMenuItem(
+                              value: g, child: Text(g)))
+                          .toList(),
+                      onChanged: (val) {
+                        if (val != null) {
+                          setDialogState(() => selectedGender = val);
+                        }
+                      },
                     ),
                     const SizedBox(height: 12),
 
