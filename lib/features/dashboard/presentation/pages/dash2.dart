@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:petey_adoption_system/features/adminDashboard/presentation/pages/admin_pet_screen.dart';
 import 'package:petey_adoption_system/features/dashboard/presentation/pages/appontment_screen.dart';
 import 'package:petey_adoption_system/features/dashboard/presentation/pages/explore_screen.dart';
 import 'package:petey_adoption_system/features/dashboard/presentation/pages/profile_screen.dart';
@@ -28,26 +29,6 @@ class _DashboardScreenViewState extends ConsumerState<DashboardScreenView> {
       ProfileScreen(),  
     ];
   }
-
-
-  
-  final List<Map<String, String>> featuredPets = [
-    {
-      "name": "Jimmy",
-      "description": "Yo kukur dherai ramro xha so better you get adopte it faster to enjoy more in life",
-      "image": "assets/pet.jpg",
-    },
-    {
-      "name": "Coco",
-      "description": "Yo kukur dherai ramro xha so better you get adopte it faster to enjoy more in life",
-      "image": "assets/pet1.jpg",
-    },
-    {
-      "name": "Billo Rani",
-      "description": "Yo kukur dherai ramro xha so better you get adopte it faster to enjoy more in life",
-      "image": "assets/pet2.jpeg",
-    },
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -144,18 +125,35 @@ class _DashboardScreenViewState extends ConsumerState<DashboardScreenView> {
             SizedBox(height: 12),
 
        
-            ListView.separated(
-              shrinkWrap: true,
-              physics: NeverScrollableScrollPhysics(),
-              itemCount: featuredPets.length,
-              separatorBuilder: (context, index) => SizedBox(height: 10),
-              itemBuilder: (context, index) {
-                final pet = featuredPets[index];
-                return petCard(
-                  name: pet["name"]!,
-                  description: pet["description"]!,
-                  imagePath: pet["image"]!,
-                  isFirst: index == 0,
+            Builder(
+              builder: (context) {
+                final availablePets = ref.watch(adminPetsProvider);
+                if (availablePets.isEmpty) {
+                  return Container(
+                    padding: const EdgeInsets.all(20),
+                    alignment: Alignment.center,
+                    child: const Text(
+                      "No pets available in database.",
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  );
+                }
+                return ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: availablePets.length,
+                  separatorBuilder: (context, index) => const SizedBox(height: 10),
+                  itemBuilder: (context, index) {
+                    final pet = availablePets[index];
+                    return petCard(
+                      name: pet.name,
+                      description: pet.description.isNotEmpty
+                          ? pet.description
+                          : '${pet.species} • ${pet.breed}',
+                      imagePath: pet.imagePath ?? 'assets/images/pet.jpg',
+                      isFirst: index == 0,
+                    );
+                  },
                 );
               },
             ),

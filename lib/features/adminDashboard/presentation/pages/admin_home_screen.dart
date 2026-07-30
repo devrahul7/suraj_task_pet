@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:petey_adoption_system/core/providers/notification_provider.dart';
 import 'package:petey_adoption_system/features/adminDashboard/presentation/pages/activity_tile.dart';
 import 'package:petey_adoption_system/features/adminDashboard/presentation/pages/admin_pet_screen.dart';
 import 'package:petey_adoption_system/features/adminDashboard/presentation/pages/admin_user_screen.dart';
@@ -13,6 +14,7 @@ class AdminHomeScreen extends ConsumerWidget {
     // Dynamic Real Data Metrics from State
     final users = ref.watch(adminUsersProvider);
     final pets = ref.watch(adminPetsProvider);
+    final adminNotifications = ref.watch(adminNotificationProvider);
 
     final totalUsersCount = users.length.toString();
     final totalPetsCount = pets.length.toString();
@@ -87,20 +89,39 @@ class AdminHomeScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 10),
 
-          const ActivityTile(
-            title: "New User Registered (rahul@petey.com)",
-            subtitle: "2 minutes ago",
-          ),
-          const ActivityTile(
-            title: "Adoption Request Submitted for Coco (Beagle)",
-            subtitle: "10 minutes ago",
-          ),
-          const ActivityTile(
-            title: "New Pet Listed: Billo Rani (Persian Cat)",
-            subtitle: "20 minutes ago",
-          ),
+          if (adminNotifications.isEmpty) ...[
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey.shade200),
+              ),
+              child: Text(
+                "No recent system activity.",
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+              ),
+            ),
+          ] else ...[
+            ...adminNotifications.take(5).map(
+                  (item) => ActivityTile(
+                    title: "${item.title}: ${item.body}",
+                    subtitle: _formatTimeAgo(item.time),
+                  ),
+                ),
+          ],
         ],
       ),
     );
+  }
+
+  static String _formatTimeAgo(DateTime time) {
+    final diff = DateTime.now().difference(time);
+    if (diff.inMinutes < 1) return 'Just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    return '${diff.inDays}d ago';
   }
 }

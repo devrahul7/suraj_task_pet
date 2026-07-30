@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:petey_adoption_system/core/providers/notification_provider.dart';
 import 'package:petey_adoption_system/core/services/storage/user_session_service.dart';
-import 'package:petey_adoption_system/features/adoption/presentation/pages/book_pet_page.dart';
+import 'package:petey_adoption_system/features/adminDashboard/presentation/pages/admin_pet_screen.dart';
 import 'package:petey_adoption_system/features/adoption/presentation/pages/my_adoptions_page.dart';
 import 'package:petey_adoption_system/features/ai/presentation/pages/ai_recommendation_page.dart';
 import 'package:petey_adoption_system/features/auth/presentation/pages/login_page.dart';
@@ -20,29 +20,6 @@ class DashboardScreen extends ConsumerStatefulWidget {
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   int _selectedIndex = 0;
-
-  final List<Map<String, String>> featuredPets = [
-    {
-      "name": "Jimmy",
-      "breed": "Golden Retriever",
-      "description":
-          "Friendly, energetic retriever looking for an active family.",
-      "image": "assets/images/pet.jpg",
-    },
-    {
-      "name": "Coco",
-      "breed": "Beagle",
-      "description": "Playful and curious puppy who loves outdoor adventures.",
-      "image": "assets/images/pet1.jpg",
-    },
-    {
-      "name": "Billo Rani",
-      "breed": "Persian Cat",
-      "description":
-          "Calm, affectionate cat ideal for indoor apartment living.",
-      "image": "assets/images/pet2.jpeg",
-    },
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -302,6 +279,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 
   Widget _homeBody() {
+    final availablePets = ref.watch(adminPetsProvider);
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -397,109 +376,126 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           const SizedBox(height: 12),
 
           // Horizontal Featured Pets List
-          SizedBox(
-            height: 250,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: featuredPets.length,
-              separatorBuilder: (context, index) => const SizedBox(width: 14),
-              itemBuilder: (context, index) {
-                final pet = featuredPets[index];
-                return Container(
-                  width: 170,
+          availablePets.isEmpty
+              ? Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: Colors.grey.shade50,
                     borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.shade200,
-                        blurRadius: 8,
-                        spreadRadius: 2,
-                      ),
-                    ],
+                    border: Border.all(color: Colors.grey.shade200),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      ClipRRect(
-                        borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(16),
+                  child: Center(
+                    child: Text(
+                      "No pets listed in database yet.",
+                      style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+                    ),
+                  ),
+                )
+              : SizedBox(
+                  height: 250,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: availablePets.length,
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(width: 14),
+                    itemBuilder: (context, index) {
+                      final pet = availablePets[index];
+                      final imgPath = pet.imagePath ?? 'assets/images/pet.jpg';
+                      return Container(
+                        width: 170,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.shade200,
+                              blurRadius: 8,
+                              spreadRadius: 2,
+                            ),
+                          ],
                         ),
-                        child: Image.asset(
-                          pet["image"]!,
-                          height: 120,
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) =>
-                              Container(
-                            height: 120,
-                            color: Colors.deepOrange.shade100,
-                            child: const Icon(Icons.pets,
-                                size: 48, color: Colors.deepOrange),
-                          ),
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(10),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              pet["name"]!,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
+                            ClipRRect(
+                              borderRadius: const BorderRadius.vertical(
+                                top: Radius.circular(16),
                               ),
+                              child: imgPath.startsWith('assets/')
+                                  ? Image.asset(
+                                      imgPath,
+                                      height: 120,
+                                      width: double.infinity,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (context, error, stackTrace) =>
+                                          _placeholder(),
+                                    )
+                                  : Image.network(
+                                      imgPath,
+                                      height: 120,
+                                      width: double.infinity,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (context, error, stackTrace) =>
+                                          _placeholder(),
+                                    ),
                             ),
-                            Text(
-                              pet["breed"]!,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey.shade600,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.deepOrange,
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 6),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
+                            Padding(
+                              padding: const EdgeInsets.all(10),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    pet.name,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
                                   ),
-                                ),
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => BookPetPage(
-                                        petName: pet["name"]!,
-                                        petBreed: pet["breed"]!,
+                                  Text(
+                                    pet.breed,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey.shade600,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: ElevatedButton(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.deepOrange,
+                                        padding: const EdgeInsets.symmetric(
+                                            vertical: 6),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
+                                      ),
+                                      onPressed: () {
+                                        setState(() {
+                                          _selectedIndex = 1;
+                                        });
+                                      },
+                                      child: const Text(
+                                        "View & Book",
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
                                     ),
-                                  );
-                                },
-                                child: const Text(
-                                  "Adopt",
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
                                   ),
-                                ),
+                                ],
                               ),
                             ),
                           ],
                         ),
-                      ),
-                    ],
+                      );
+                    },
                   ),
-                );
-              },
-            ),
-          ),
+                ),
           const SizedBox(height: 24),
 
           // AI Helper Banner
@@ -551,6 +547,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _placeholder() {
+    return Container(
+      height: 120,
+      width: double.infinity,
+      color: Colors.deepOrange.shade100,
+      child: const Icon(Icons.pets, size: 48, color: Colors.deepOrange),
     );
   }
 }

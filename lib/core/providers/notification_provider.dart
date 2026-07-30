@@ -19,31 +19,7 @@ class AppNotification {
 }
 
 class NotificationNotifier extends StateNotifier<List<AppNotification>> {
-  NotificationNotifier()
-      : super([
-          AppNotification(
-            id: 'n1',
-            title: 'Adoption Request Approved',
-            body: 'Your adoption request for Coco (Beagle) has been approved by Admin!',
-            time: DateTime.now().subtract(const Duration(minutes: 5)),
-            type: 'adoption',
-          ),
-          AppNotification(
-            id: 'n2',
-            title: 'New Pet Added',
-            body: 'A new pet "Billo Rani" (Persian Cat) is now available for adoption.',
-            time: DateTime.now().subtract(const Duration(hours: 1)),
-            type: 'pet',
-          ),
-          AppNotification(
-            id: 'n3',
-            title: 'Welcome to PetEy!',
-            body: 'Start browsing pets available for adoption in your area.',
-            time: DateTime.now().subtract(const Duration(hours: 3)),
-            type: 'system',
-            isRead: true,
-          ),
-        ]);
+  NotificationNotifier() : super([]);
 
   void addNotification(AppNotification notification) {
     state = [notification, ...state];
@@ -94,31 +70,7 @@ final notificationProvider =
 
 // Admin-specific notifications
 class AdminNotificationNotifier extends StateNotifier<List<AppNotification>> {
-  AdminNotificationNotifier()
-      : super([
-          AppNotification(
-            id: 'an1',
-            title: 'New Adoption Request',
-            body: 'Rahul Suraj has submitted an adoption request for Coco (Beagle).',
-            time: DateTime.now().subtract(const Duration(minutes: 10)),
-            type: 'adoption',
-          ),
-          AppNotification(
-            id: 'an2',
-            title: 'New User Registered',
-            body: 'A new user rahul@gmail.com just registered on PetEy.',
-            time: DateTime.now().subtract(const Duration(minutes: 30)),
-            type: 'user',
-          ),
-          AppNotification(
-            id: 'an3',
-            title: 'Adoption Completed',
-            body: 'Jimmy (Golden Retriever) has been successfully adopted.',
-            time: DateTime.now().subtract(const Duration(hours: 2)),
-            type: 'adoption',
-            isRead: true,
-          ),
-        ]);
+  AdminNotificationNotifier() : super([]);
 
   void addNotification(AppNotification notification) {
     state = [notification, ...state];
