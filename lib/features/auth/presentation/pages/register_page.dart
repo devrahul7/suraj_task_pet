@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:petey_adoption_system/app/routes/app_routes.dart';
 import 'package:petey_adoption_system/app/theme/theme_extensions.dart';
 import 'package:petey_adoption_system/core/utils/snackbar_utils.dart';
 import 'package:petey_adoption_system/core/widgets/gradient_button.dart';
+import 'package:petey_adoption_system/core/services/storage/user_session_service.dart';
+import 'package:petey_adoption_system/features/adminDashboard/presentation/pages/admin_dashboard_screen.dart';
 import 'package:petey_adoption_system/features/auth/presentation/pages/login_page.dart';
 import 'package:petey_adoption_system/features/auth/presentation/state/auth_state.dart';
 import 'package:petey_adoption_system/features/auth/presentation/view_model/auth_view_model.dart';
+import 'package:petey_adoption_system/features/dashboard/presentation/pages/dashboard_screen.dart';
 
 class RegisterPage extends ConsumerStatefulWidget {
   const RegisterPage({super.key});
@@ -25,9 +29,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   String? termsError;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
-  bool _agreedToTerms = false;
-  // String? _gender;
-  // static const _genders = ['Male', 'Female', 'Other']; //if required
+  bool _agreedToTerms = true;
 
   @override
   void dispose() {
@@ -49,7 +51,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
       return;
     }
     if (_keyForm.currentState!.validate()) {
-      //ya ko data lai view model ma pass garnu paryo
+      ref.read(authViewModelProvider.notifier).resetState();
       ref
           .read(authViewModelProvider.notifier)
           .register(
@@ -61,28 +63,6 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
           );
     }
   }
-
-  void navigateToLogin() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => LoginPage()),
-    );
-  }
-  // void _register() {
-  //   bool formValid = _keyForm.currentState?.validate() ?? false;
-  //   setState(() {
-  //     termsError = isTermsAccepted
-  //         ? null
-  //         : "You must agree to the Terms and Conditions.";
-  //   });
-
-  //   if (formValid && isTermsAccepted) {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       const SnackBar(content: Text('Account created. Please login.')),
-  //     );
-  //     Navigator.pop(context);
-  //   }
-  // }
 
   String? _validateEmail(String? value) {
     if (value == null || value.trim().isEmpty) {
@@ -114,18 +94,38 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
 
   @override
   Widget build(BuildContext context) {
-    //Auth State haru and aaru state pani list garnu parxha if needed
     final authState = ref.watch(authViewModelProvider);
-    //listen for state changes like loading, error, registered etc
-    ref.listen(authViewModelProvider, (previous, next) {
+
+    ref.listen<AuthState>(authViewModelProvider, (previous, next) {
       if (next.status == AuthStatus.error && next.errorMessage != null) {
         SnackbarUtils.showError(context, next.errorMessage!);
-      } else if (next.status == AuthStatus.registered) {
+      } else if (next.status == AuthStatus.authenticated ||
+          next.status == AuthStatus.registered) {
         SnackbarUtils.showSuccess(
           context,
-          "Registration successful. Please login.",
+          "Registration successful! Logged in automatically.",
         );
-        navigateToLogin();
+
+        final session = ref.read(userSessionServiceProvider);
+        final sessionRole = (session.getUserRole() ?? '').toUpperCase();
+        final sessionEmail = (session.getUserEmail() ?? '').toLowerCase();
+        final sessionUsername = (session.getUsername() ?? '').toLowerCase();
+
+        final entityRole = next.authEntity?.role?.toUpperCase() ?? '';
+        final entityEmail = next.authEntity?.email.toLowerCase() ?? '';
+        final entityUsername = next.authEntity?.username.toLowerCase() ?? '';
+
+        final isAdmin = sessionRole == 'ADMIN' ||
+            sessionEmail == 'admin@petey.com' ||
+            sessionUsername == 'admin' ||
+            entityRole == 'ADMIN' ||
+            entityEmail == 'admin@petey.com' ||
+            entityUsername == 'admin';
+
+        AppRoutes.pushAndRemoveUntil(
+          context,
+          isAdmin ? const AdminDashboardScreen() : const DashboardScreen(),
+        );
       }
     });
 
@@ -382,14 +382,9 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                       Text("Already have a Account? "),
                       GestureDetector(
                         onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => LoginPage(),
-                            ),
-                          );
+                          AppRoutes.pushReplacement(context, const LoginPage());
                         },
-                        child: Text(
+                        child: const Text(
                           "Login",
                           style: TextStyle(
                             color: Colors.orange,

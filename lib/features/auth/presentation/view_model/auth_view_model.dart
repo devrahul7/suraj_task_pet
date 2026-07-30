@@ -22,6 +22,10 @@ class AuthViewModel extends Notifier<AuthState> {
     return const AuthState();
   }
 
+  void resetState() {
+    state = const AuthState();
+  }
+
   //Register Function
   Future<void> register({
     required String fullName,
@@ -31,58 +35,70 @@ class AuthViewModel extends Notifier<AuthState> {
     required String username,
   }) async {
     state = state.copyWith(status: AuthStatus.loading);
-    //Waith for 2 seconds to show loading state
-    await Future.delayed(const Duration(seconds: 2));
-    
-    final params = RegisterUsecaseParams(
-      fullName: fullName,
-      email: email,
-      phoneNumber: phoneNumber,
-      password: password,
-      username: username,
-    );
-    final result = await _registerUsecase(params);
-    result.fold(
-      (failure) {
-        state = state.copyWith(
-          status: AuthStatus.error,
-          errorMessage: failure.message,
-        );
-      },
-      (isRegistered) {
-        if (isRegistered) {
-          state = state.copyWith(status: AuthStatus.registered);
-        } else {
+    try {
+      final params = RegisterUsecaseParams(
+        fullName: fullName,
+        email: email,
+        phoneNumber: phoneNumber,
+        password: password,
+        username: username,
+      );
+      final result = await _registerUsecase(params);
+      result.fold(
+        (failure) {
           state = state.copyWith(
             status: AuthStatus.error,
-            errorMessage: "Registration failed",
+            errorMessage: failure.message,
           );
-        }
-      },
-    );
+        },
+        (isRegistered) async {
+          if (isRegistered) {
+            // Automatically log in user after registration
+            await login(username: username, password: password);
+          } else {
+            state = state.copyWith(
+              status: AuthStatus.error,
+              errorMessage: "Registration failed",
+            );
+          }
+        },
+      );
+    } catch (e) {
+      state = state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: e.toString(),
+      );
+    }
   }
+
   // Login Function
   Future<void> login({
     required String username,
     required String password,
   }) async {
     state = state.copyWith(status: AuthStatus.loading);
-    final params = LoginUsecaseParams(username: username, password: password);
-    await Future.delayed(const Duration(seconds: 2)); // Simulate loading delay
-    final result = await _loginUsecase(params);
-    result.fold(
-      (failure) {
-        state = state.copyWith(
-          status: AuthStatus.error,
-          errorMessage: failure.message,
-        );
-      },
-      (authEntity) {
-        state = state.copyWith(
-          status: AuthStatus.authenticated,
-          authEntity: authEntity,
-        );
-      },
-    );
+    try {
+      final params = LoginUsecaseParams(username: username, password: password);
+      final result = await _loginUsecase(params);
+      result.fold(
+        (failure) {
+          state = state.copyWith(
+            status: AuthStatus.error,
+            errorMessage: failure.message,
+          );
+        },
+        (authEntity) {
+          state = state.copyWith(
+            status: AuthStatus.authenticated,
+            authEntity: authEntity,
+          );
+        },
+      );
+    } catch (e) {
+      state = state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: e.toString(),
+      );
+    }
   }
 }

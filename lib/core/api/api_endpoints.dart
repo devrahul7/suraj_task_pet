@@ -4,32 +4,19 @@ import 'package:flutter/foundation.dart';
 class ApiEndpoints {
   ApiEndpoints._();
 
-  static const bool isPhysicalDevice =
-      false; // Set to true if running on a physical device, false for emulator/simulator.
-  static const String compIpAddress = 'http://192.168.1.1';
-  // static const String compIpAddress = '2400:1a00:4b88:2210:faf6:2408:bfc7:fe0a';//My laptop's IP address.
-  // Base URL - change this for production
-  // static const String baseUrl = 'http://10.0.2.2:5000/api/v1';
+  static const bool isPhysicalDevice = true; // Enabled for physical phone on Wi-Fi
+  static const String compIpAddress = '192.168.1.65';
 
-  //Get the base URL based on the platform
+  // Get the base URL based on the platform
   static String get baseUrl {
-    if (isPhysicalDevice) {
-      return 'http://[$compIpAddress]:5000/api/v1';
-    }
-    //check the device type and return the appropriate base URL
-    if (kIsWeb) {
-      return 'http://localhost:5000/api/v1';
-    } else if (Platform.isAndroid) {
-      return 'http://10.0.2.2:5000/api/v1';
-    } else if (Platform.isIOS) {
-      return 'http://localhost:5000/api/v1';
-    } else {
+    if (kIsWeb || Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
       return 'http://localhost:5000/api/v1';
     }
+    return 'http://$compIpAddress:5000/api/v1';
   }
 
-  static const Duration connectionTimeout = Duration(seconds: 30);
-  static const Duration receiveTimeout = Duration(seconds: 30);
+  static const Duration connectionTimeout = Duration(seconds: 5);
+  static const Duration receiveTimeout = Duration(seconds: 5);
 
   // =========== Auth Endpoints ===========
   // static const String userLogin = '/users/login';

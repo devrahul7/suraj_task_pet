@@ -2,34 +2,26 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-//Shared Preferences Provider
 final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
-  //async
-  //sync
   throw UnimplementedError(
-    "Shared pref lai main.dart ma imoplement garinxha so tme dhukka basa ma dinxhu hai",
+    "Shared pref is initialized in main.dart",
   );
 });
 
-//Provider for UserSessionService
 final userSessionServiceProvider = Provider<UserSessionService>((ref) {
   return UserSessionService(prefs: ref.read(sharedPreferencesProvider));
 });
 
 class UserSessionService {
-  //As a  private variable to hold the instance of SharedPreferences and
-  //also we can make a private constructor to prevent instantiation of this class from outside and
-  // also we can make a static method to get the instance of this class
   final SharedPreferences _prefs;
   final FlutterSecureStorage _secureStorage;
 
   UserSessionService({
     required SharedPreferences prefs,
     FlutterSecureStorage? secureStorage,
-  }) : _prefs = prefs,
-       _secureStorage = secureStorage ?? const FlutterSecureStorage();
+  })  : _prefs = prefs,
+        _secureStorage = secureStorage ?? const FlutterSecureStorage();
 
-  //Keys for storing user session data
   static const String _keyAuthToken = 'auth_token';
   static const String _keysIsLoggedIn = 'is_logged_in';
   static const String _keyUserId = 'user_id';
@@ -42,11 +34,17 @@ class UserSessionService {
   static const String _keyUserLocation = 'user_location';
   static const String _keyUserRole = 'user_role';
 
+  // Biometric persistence keys (preserved across logout)
+  static const String _keyBiometricEnabled = 'biometric_enabled';
+  static const String _keyBiometricEmail = 'biometric_email';
+  static const String _keyBiometricRole = 'biometric_role';
+  static const String _keyBiometricUsername = 'biometric_username';
+  static const String _keyBiometricFullName = 'biometric_full_name';
+
   Future<void> saveAuthToken(String token) async {
     await _secureStorage.write(key: _keyAuthToken, value: token);
   }
 
-  //Store user session data
   Future<void> saveUserSession({
     required String userId,
     required String username,
@@ -78,9 +76,68 @@ class UserSessionService {
     if (role != null) {
       await _prefs.setString(_keyUserRole, role);
     }
+
+    // Auto-update biometric account info if biometric is enabled
+    if (isBiometricEnabled()) {
+      await saveBiometricAccount(
+        email: email,
+        role: role ?? 'USER',
+        username: username,
+        fullName: fullName,
+      );
+    }
   }
 
-  //clear user session data
+  Future<void> saveBiometricAccount({
+    required String email,
+    required String role,
+    String? username,
+    String? fullName,
+  }) async {
+    await _prefs.setString(_keyBiometricEmail, email);
+    await _prefs.setString(_keyBiometricRole, role);
+    if (username != null) await _prefs.setString(_keyBiometricUsername, username);
+    if (fullName != null) await _prefs.setString(_keyBiometricFullName, fullName);
+  }
+
+  Future<void> setBiometricEnabled(bool enabled) async {
+    await _prefs.setBool(_keyBiometricEnabled, enabled);
+    if (enabled) {
+      final email = getUserEmail();
+      final role = getUserRole();
+      final username = getUsername();
+      final fullName = getUserFullName();
+      if (email != null) {
+        await saveBiometricAccount(
+          email: email,
+          role: role ?? 'USER',
+          username: username,
+          fullName: fullName,
+        );
+      }
+    }
+  }
+
+  bool isBiometricEnabled() {
+    return _prefs.getBool(_keyBiometricEnabled) ?? false;
+  }
+
+  String? getBiometricEmail() {
+    return _prefs.getString(_keyBiometricEmail) ?? getUserEmail();
+  }
+
+  String? getBiometricRole() {
+    return _prefs.getString(_keyBiometricRole) ?? getUserRole();
+  }
+
+  String? getBiometricUsername() {
+    return _prefs.getString(_keyBiometricUsername) ?? getUsername();
+  }
+
+  String? getBiometricFullName() {
+    return _prefs.getString(_keyBiometricFullName) ?? getUserFullName();
+  }
+
   Future<void> clearUserSession() async {
     await _secureStorage.delete(key: _keyAuthToken);
     await _prefs.remove(_keysIsLoggedIn);
@@ -93,9 +150,9 @@ class UserSessionService {
     await _prefs.remove(_keyUserAddress);
     await _prefs.remove(_keyUserLocation);
     await _prefs.remove(_keyUserRole);
+    // Note: We DO NOT remove biometric account keys here so fingerprint login works on Login Page
   }
 
-  //Getters to retrieve user session data
   bool isLoggedIn() {
     return _prefs.getBool(_keysIsLoggedIn) ?? false;
   }

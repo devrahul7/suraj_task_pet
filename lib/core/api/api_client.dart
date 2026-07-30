@@ -34,11 +34,9 @@ class ApiClient {
     _dio.interceptors.add(
       RetryInterceptor(
         dio: _dio,
-        retries: 3,
+        retries: 1,
         retryDelays: const [
           Duration(seconds: 1),
-          Duration(seconds: 2),
-          Duration(seconds: 3),
         ],
         retryEvaluator: (error, attempt) {
           // Never retry manually cancelled requests (e.g. missing token)

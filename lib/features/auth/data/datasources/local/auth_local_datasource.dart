@@ -22,17 +22,6 @@ class AuthLocalDatasource implements IAuthLocalDatasource {
        _userSessionService = userSessionService;
 
   @override
-  Future<AuthHiveModel?> getCurrentUser() {
-    throw UnimplementedError();
-    // try {
-    //   final user = await _hiveService.getCurrentUser();
-    //   return Future.value(user);
-    // } catch (e) {
-    //   return Future.value(null);
-    // }
-  }
-
-  @override
   Future<AuthHiveModel?> login(String email, String password) async {
     try {
       final user = await _hiveService.login(email, password);
@@ -48,6 +37,10 @@ class AuthLocalDatasource implements IAuthLocalDatasource {
           profileImage: user.profilePicture ?? '',
           address: user.address ?? '',
           location: user.location ?? '',
+          role: (user.email.toLowerCase() == 'admin@petey.com' ||
+                  user.username.toLowerCase() == 'admin')
+              ? 'ADMIN'
+              : 'USER',
         );
       }
       return user;
@@ -70,6 +63,21 @@ class AuthLocalDatasource implements IAuthLocalDatasource {
   Future<AuthHiveModel?> register(AuthHiveModel model) async {
     try {
       await _hiveService.registerUser(model);
+      final role = (model.email.toLowerCase() == 'admin@petey.com' ||
+              model.username.toLowerCase() == 'admin')
+          ? 'ADMIN'
+          : 'USER';
+      await _userSessionService.saveUserSession(
+        userId: model.authId ?? model.email,
+        username: model.username,
+        email: model.email,
+        phoneNumber: model.phoneNumber,
+        fullName: model.fullName,
+        profileImage: model.profilePicture ?? '',
+        address: model.address ?? '',
+        location: model.location ?? '',
+        role: role,
+      );
       return Future.value(model);
     } catch (e) {
       return Future.value(null);
@@ -87,26 +95,60 @@ class AuthLocalDatasource implements IAuthLocalDatasource {
   }
   
   @override
-  Future<bool> deleteUser(String authId) {
-    // TODO: implement deleteUser
-    throw UnimplementedError();
+  Future<AuthHiveModel?> getCurrentUser() async {
+    try {
+      // Use saved session userId to look up the user in Hive
+      final userId = _userSessionService.getUserId();
+      if (userId != null && userId.isNotEmpty) {
+        final byId = _hiveService.getUserById(userId);
+        if (byId != null) return byId;
+      }
+      // Fallback: look up by saved email
+      final email = _userSessionService.getUserEmail();
+      if (email != null && email.isNotEmpty) {
+        return _hiveService.getUserByEmail(email);
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
   }
-  
+
   @override
-  Future<AuthHiveModel?> getUserById(String authId) {
-    // TODO: implement getUserById
-    throw UnimplementedError();
+  Future<bool> deleteUser(String authId) async {
+    try {
+      await _hiveService.deleteUser(authId);
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
-  
+
   @override
-  Future<AuthHiveModel?> getUserByEmail(String email) {
-    // TODO: implement getUserByEmail
-    throw UnimplementedError();
+  Future<AuthHiveModel?> getUserById(String authId) async {
+    try {
+      return _hiveService.getUserById(authId);
+    } catch (_) {
+      return null;
+    }
   }
-  
+
   @override
-  Future<bool> updateUser(AuthHiveModel model) {
-    // TODO: implement updateUser
-    throw UnimplementedError();
+  Future<AuthHiveModel?> getUserByEmail(String email) async {
+    try {
+      return _hiveService.getUserByEmail(email);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
+  Future<bool> updateUser(AuthHiveModel model) async {
+    try {
+      await _hiveService.updateUser(model);
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 }

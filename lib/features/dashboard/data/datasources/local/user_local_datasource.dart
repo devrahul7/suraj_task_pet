@@ -11,7 +11,8 @@ final userLocalDatasourceProvider = Provider<IUserLocalDatasource>((ref) {
 class UserLocalDatasource implements IUserLocalDatasource {
   final HiveService _hiveService;
 
-
   UserLocalDatasource({required HiveService hiveService}) :
         _hiveService = hiveService;
+
+  HiveService get hiveService => _hiveService;
 }

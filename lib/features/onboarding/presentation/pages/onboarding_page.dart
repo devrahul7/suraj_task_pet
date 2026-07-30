@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:petey_adoption_system/features/auth/presentation/pages/login_page.dart';
-import 'package:shared_preferences/shared_preferences.dart';    
+import 'package:shared_preferences/shared_preferences.dart';
 
 class OnboardingPage extends ConsumerStatefulWidget {
   const OnboardingPage({super.key});
@@ -10,43 +10,45 @@ class OnboardingPage extends ConsumerStatefulWidget {
   ConsumerState<OnboardingPage> createState() => _OnboardingPageState();
 }
 
-class _OnboardingPage{
+class _OnboardingItem {
   final String image;
   final String title;
   final String description;
 
-  _OnboardingPage({required this.image, required this.title, required this.description});
+  _OnboardingItem({
+    required this.image,
+    required this.title,
+    required this.description,
+  });
 }
-class _OnboardingPageState extends ConsumerState<OnboardingPage> {
 
+class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   final PageController _controller = PageController();
   int _currentIndex = 0;
 
-  final List<_OnboardingPage> _pages = [
-    _OnboardingPage(
-      image: "assets/images/logo.png",
-      title: "Wlcome to PetEy", 
-      description: "We’re here to help you find a perfect furry friend that will fill your life with joy and love"
+  final List<_OnboardingItem> _pages = [
+    _OnboardingItem(
+      image: "assets/images/pet.jpg",
+      title: "Welcome to PetEy",
+      description:
+          "Find your perfect furry companion that will fill your home with happiness and unconditional love.",
     ),
-
-    _OnboardingPage(
-      image: "assets/images/logo.png",
-      title: "Discover Your Perfect match",
-      description: "We Make it easy for you to find, connect and adopt you special life mate."
+    _OnboardingItem(
+      image: "assets/images/pet1.jpg",
+      title: "Discover Your Match",
+      description:
+          "Browse shelters, schedule meet & greets, and adopt pets seamlessly through our platform.",
     ),
-
-    _OnboardingPage(
-      image: "assets/images/logo.png",
-      title: "Uniqueness on PetEy", 
-      description: "We offer a Personalize Ai powered matching features which let you to match and find the best pet to adopt by your habit behavior and lifestyle. "
-    )
-
-
-
+    _OnboardingItem(
+      image: "assets/images/pet2.jpeg",
+      title: "AI Pet Recommendation",
+      description:
+          "Our OpenAI algorithm evaluates your home, activity, and lifestyle to recommend your ideal pet match.",
+    ),
   ];
 
   @override
-  void dispose(){
+  void dispose() {
     _controller.dispose();
     super.dispose();
   }
@@ -78,33 +80,37 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       margin: const EdgeInsets.symmetric(horizontal: 4),
-      width: _currentIndex == index ? 20 : 8,
+      width: _currentIndex == index ? 24 : 8,
       height: 8,
       decoration: BoxDecoration(
-        color: _currentIndex == index
-            ? Colors.teal
-            : Colors.grey.shade400,
+        color: _currentIndex == index ? Colors.deepOrange : Colors.grey.shade300,
         borderRadius: BorderRadius.circular(10),
       ),
     );
   }
+
   @override
   Widget build(BuildContext context) {
-    bool isLast = _currentIndex == _pages.length -1;
+    bool isLast = _currentIndex == _pages.length - 1;
     return Scaffold(
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Column(
           children: [
-            // Skip button
             Align(
               alignment: Alignment.centerRight,
               child: TextButton(
                 onPressed: _finishOnboarding,
-                child: const Text("Skip"),
+                child: const Text(
+                  "Skip",
+                  style: TextStyle(
+                    color: Colors.deepOrange,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
               ),
             ),
-
-            // Pages
             Expanded(
               child: PageView.builder(
                 controller: _controller,
@@ -120,32 +126,45 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // Image
-                        Image.asset(
-                          page.image,
-                          height: 250,
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: Image.asset(
+                            page.image,
+                            height: 260,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => Container(
+                              height: 260,
+                              decoration: BoxDecoration(
+                                color: Colors.deepOrange.shade50,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: const Icon(
+                                Icons.pets,
+                                size: 100,
+                                color: Colors.deepOrange,
+                              ),
+                            ),
+                          ),
                         ),
-
-                        const SizedBox(height: 30),
-
-                        // Title
+                        const SizedBox(height: 32),
                         Text(
                           page.title,
                           style: const TextStyle(
                             fontSize: 26,
                             fontWeight: FontWeight.bold,
+                            fontFamily: 'OutfitBold',
+                            color: Colors.black,
                           ),
                           textAlign: TextAlign.center,
                         ),
-
-                        const SizedBox(height: 15),
-
-                        // Description
+                        const SizedBox(height: 14),
                         Text(
                           page.description,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            color: Colors.black54,
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: Colors.grey.shade700,
+                            height: 1.4,
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -155,8 +174,6 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                 },
               ),
             ),
-
-            // Dots
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(
@@ -164,26 +181,27 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                 (index) => _buildDot(index),
               ),
             ),
-
-            const SizedBox(height: 20),
-
-            // Button
+            const SizedBox(height: 24),
             Padding(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
               child: SizedBox(
                 width: double.infinity,
-                height: 55,
+                height: 52,
                 child: ElevatedButton(
                   onPressed: _nextPage,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.teal,
+                    backgroundColor: Colors.deepOrange,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(14),
                     ),
                   ),
                   child: Text(
                     isLast ? "Get Started" : "Next",
-                    style: const TextStyle(fontSize: 16),
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ),
@@ -191,9 +209,6 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
           ],
         ),
       ),
-    
-
-      
     );
   }
 }

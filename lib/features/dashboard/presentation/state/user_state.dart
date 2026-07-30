@@ -1,5 +1,4 @@
 import 'package:equatable/equatable.dart';
-import 'package:petey_adoption_system/features/dashboard/domain/usecases/upload_photo_usecase.dart';
 
 enum UserStatus { initial, loading, loaded, error, created, updated, deleted }
 

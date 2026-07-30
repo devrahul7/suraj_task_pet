@@ -32,6 +32,8 @@ class UserRepository implements IUserRepository {
   }) : _userRemoteDatasource = userRemoteDatasource,
        _userLocalDatasource = userLocalDatasource,
        _networkInfo = networkInfo;
+
+  IUserLocalDatasource get userLocalDatasource => _userLocalDatasource;
   @override
   Future<Either<Failure, String>> uploadProfileImage(File image) async {
     //Uploads only in remote data
