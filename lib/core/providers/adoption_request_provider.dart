@@ -66,54 +66,7 @@ class AdoptionRequestModel {
 class AdoptionRequestNotifier extends StateNotifier<List<AdoptionRequestModel>> {
   final Ref ref;
 
-  AdoptionRequestNotifier(this.ref)
-      : super([
-          AdoptionRequestModel(
-            id: 'req_001',
-            userId: 'u1',
-            userName: 'Rahul Suraj',
-            userEmail: 'rahul@petey.com',
-            petId: 'p2',
-            petName: 'Coco',
-            breed: 'Beagle',
-            species: 'Dog',
-            image: 'assets/images/pet1.jpg',
-            fee: 100.0,
-            status: 'PENDING',
-            requestDate: '2026-07-30',
-            adminNotes: 'Waiting for Admin confirmation...',
-          ),
-          AdoptionRequestModel(
-            id: 'req_002',
-            userId: 'u1',
-            userName: 'Rahul Suraj',
-            userEmail: 'rahul@petey.com',
-            petId: 'p3',
-            petName: 'Billo Rani',
-            breed: 'Persian',
-            species: 'Cat',
-            image: 'assets/images/pet2.jpeg',
-            fee: 120.0,
-            status: 'APPROVED',
-            requestDate: '2026-07-29',
-            adminNotes: 'Request approved by Admin! Complete fee payment to finalize adoption.',
-          ),
-          AdoptionRequestModel(
-            id: 'req_003',
-            userId: 'u2',
-            userName: 'Jane Doe',
-            userEmail: 'jane@gmail.com',
-            petId: 'p1',
-            petName: 'Jimmy',
-            breed: 'Golden Retriever',
-            species: 'Dog',
-            image: 'assets/images/pet.jpg',
-            fee: 150.0,
-            status: 'PAID',
-            requestDate: '2026-07-28',
-            adminNotes: 'Payment verified via Stripe. Pet officially adopted!',
-          ),
-        ]) {
+  AdoptionRequestNotifier(this.ref) : super([]) {
     _fetchRequestsFromApi();
   }
 

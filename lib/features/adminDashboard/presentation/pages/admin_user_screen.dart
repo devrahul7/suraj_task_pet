@@ -43,33 +43,7 @@ class UserModel {
 class AdminUsersNotifier extends StateNotifier<List<UserModel>> {
   final Ref _ref;
 
-  AdminUsersNotifier(this._ref)
-      : super([
-          UserModel(
-            id: 'u1',
-            fullName: 'Rahul Suraj',
-            email: 'rahul@petey.com',
-            phone: '9841234567',
-            role: 'USER',
-            createdAt: DateTime.now().subtract(const Duration(days: 15)),
-          ),
-          UserModel(
-            id: 'u2',
-            fullName: 'Sita Sharma',
-            email: 'sita@gmail.com',
-            phone: '9801122334',
-            role: 'USER',
-            createdAt: DateTime.now().subtract(const Duration(days: 7)),
-          ),
-          UserModel(
-            id: 'u3',
-            fullName: 'Admin User',
-            email: 'admin@petey.com',
-            phone: '9800000000',
-            role: 'ADMIN',
-            createdAt: DateTime.now().subtract(const Duration(days: 30)),
-          ),
-        ]) {
+  AdminUsersNotifier(this._ref) : super([]) {
     _fetchUsersFromApi();
   }
 

@@ -12,6 +12,12 @@ class ApiEndpoints {
     if (kIsWeb || Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
       return 'http://localhost:5000/api/v1';
     }
+    if (Platform.isAndroid) {
+      // Use 10.0.2.2 for Android emulator, or compIpAddress for physical device
+      return isPhysicalDevice
+          ? 'http://$compIpAddress:5000/api/v1'
+          : 'http://10.0.2.2:5000/api/v1';
+    }
     return 'http://$compIpAddress:5000/api/v1';
   }
 

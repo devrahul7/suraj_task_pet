@@ -59,42 +59,7 @@ class PetModel {
 class AdminPetsNotifier extends StateNotifier<List<PetModel>> {
   final Ref _ref;
 
-  AdminPetsNotifier(this._ref)
-      : super([
-          PetModel(
-            id: 'p1',
-            name: 'Jimmy',
-            species: 'Dog',
-            breed: 'Golden Retriever',
-            age: '2 Years',
-            gender: 'Male',
-            status: 'AVAILABLE',
-            description: 'Friendly and energetic retriever looking for a family.',
-            imagePath: 'assets/images/pet.jpg',
-          ),
-          PetModel(
-            id: 'p2',
-            name: 'Coco',
-            species: 'Dog',
-            breed: 'Beagle',
-            age: '1.5 Years',
-            gender: 'Female',
-            status: 'AVAILABLE',
-            description: 'Playful and curious puppy who loves outdoor adventures.',
-            imagePath: 'assets/images/pet1.jpg',
-          ),
-          PetModel(
-            id: 'p3',
-            name: 'Billo Rani',
-            species: 'Cat',
-            breed: 'Persian',
-            age: '1 Year',
-            gender: 'Female',
-            status: 'PENDING',
-            description: 'Calm and affectionate cat ideal for apartment living.',
-            imagePath: 'assets/images/pet2.jpeg',
-          ),
-        ]) {
+  AdminPetsNotifier(this._ref) : super([]) {
     _fetchPetsFromApi();
   }
 
