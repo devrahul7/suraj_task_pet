@@ -4,6 +4,7 @@ import 'package:petey_adoption_system/core/services/biometric/biometric_service.
 import 'package:petey_adoption_system/core/services/storage/user_session_service.dart';
 import 'package:petey_adoption_system/core/utils/snackbar_utils.dart';
 import 'package:petey_adoption_system/features/adminDashboard/presentation/pages/admin_dashboard_screen.dart';
+import 'package:petey_adoption_system/features/auth/data/datasources/local/auth_local_datasource.dart';
 import 'package:petey_adoption_system/features/auth/presentation/pages/register_page.dart';
 import 'package:petey_adoption_system/features/auth/presentation/state/auth_state.dart';
 import 'package:petey_adoption_system/features/auth/presentation/view_model/auth_view_model.dart';
@@ -161,10 +162,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     }
   }
 
-
-  void _proceedWithBiometricLogin(
-      String? savedEmail, String? savedRole, String? savedUsername) {
-    SnackbarUtils.showSuccess(context, 'Fingerprint verified! Logging in...');
+  /// Validates user still exists in Hive/MongoDB before granting biometric access.
+  /// If account was deleted, clears biometric data and rejects login.
+  Future<void> _proceedWithBiometricLogin(
+      String? savedEmail, String? savedRole, String? savedUsername) async {
+    if (!mounted) return;
+    SnackbarUtils.showSuccess(context, 'Fingerprint verified! Validating account...');
 
     final role = (savedRole ?? '').toUpperCase();
     final email = (savedEmail ?? '').toLowerCase();
@@ -172,9 +175,29 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
     final isAdmin = role == 'ADMIN' || email == 'admin@petey.com' || username == 'admin';
 
-    // Save session back so user remains logged in
+    // ── Admin always passes (master credentials are embedded) ─────────────
+    if (!isAdmin && savedEmail != null && savedEmail.isNotEmpty) {
+      // Step 1: Check if user still exists in Hive local DB
+      final hiveUser = await ref.read(authLocalDatasourceProvider).getUserByEmail(savedEmail);
+
+      if (hiveUser == null) {
+        // User no longer exists in local database
+        // Clear biometric account so this doesn't happen again
+        await ref.read(userSessionServiceProvider).clearUserSession();
+        if (!mounted) return;
+        SnackbarUtils.showError(
+          context,
+          'Account not found. Your account may have been deleted. Please register again.',
+        );
+        return;
+      }
+    }
+
+    if (!mounted) return;
+
+    // ── Account validated — save session and navigate ──────────────────────
     final session = ref.read(userSessionServiceProvider);
-    session.saveUserSession(
+    await session.saveUserSession(
       userId: session.getUserId() ?? 'bio_id',
       username: savedUsername ?? (isAdmin ? 'admin' : 'user'),
       email: savedEmail ?? (isAdmin ? 'admin@petey.com' : 'user@petey.com'),
@@ -183,6 +206,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       role: isAdmin ? 'ADMIN' : 'USER',
     );
 
+    if (!mounted) return;
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
