@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:petey_adoption_system/core/api/api_client.dart';
 
 class AppNotification {
   final String id;
@@ -19,7 +20,38 @@ class AppNotification {
 }
 
 class NotificationNotifier extends StateNotifier<List<AppNotification>> {
-  NotificationNotifier() : super([]);
+  final Ref _ref;
+
+  NotificationNotifier(this._ref, {bool autoFetch = true}) : super([]) {
+    if (autoFetch) {
+      _fetchFromApi();
+    }
+  }
+
+  Future<void> _fetchFromApi() async {
+    try {
+      final apiClient = _ref.read(apiClientProvider);
+      final response = await apiClient.get('/notifications');
+      if (response.statusCode == 200 && response.data != null) {
+        final data = response.data;
+        List<dynamic> list = [];
+        if (data is Map && data['data'] is List) {
+          list = data['data'];
+        } else if (data is List) {
+          list = data;
+        }
+
+        state = list.map((json) => AppNotification(
+          id: json['_id'] ?? json['id'] ?? 'n_${DateTime.now().millisecondsSinceEpoch}',
+          title: json['title'] ?? 'Notification',
+          body: json['body'] ?? json['message'] ?? '',
+          time: DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now(),
+          type: json['type'] ?? 'system',
+          isRead: json['isRead'] ?? false,
+        )).toList();
+      }
+    } catch (_) {}
+  }
 
   void addNotification(AppNotification notification) {
     state = [notification, ...state];
@@ -65,12 +97,43 @@ class NotificationNotifier extends StateNotifier<List<AppNotification>> {
 
 final notificationProvider =
     StateNotifierProvider<NotificationNotifier, List<AppNotification>>(
-  (ref) => NotificationNotifier(),
+  (ref) => NotificationNotifier(ref),
 );
 
 // Admin-specific notifications
 class AdminNotificationNotifier extends StateNotifier<List<AppNotification>> {
-  AdminNotificationNotifier() : super([]);
+  final Ref _ref;
+
+  AdminNotificationNotifier(this._ref, {bool autoFetch = true}) : super([]) {
+    if (autoFetch) {
+      _fetchFromApi();
+    }
+  }
+
+  Future<void> _fetchFromApi() async {
+    try {
+      final apiClient = _ref.read(apiClientProvider);
+      final response = await apiClient.get('/notifications');
+      if (response.statusCode == 200 && response.data != null) {
+        final data = response.data;
+        List<dynamic> list = [];
+        if (data is Map && data['data'] is List) {
+          list = data['data'];
+        } else if (data is List) {
+          list = data;
+        }
+
+        state = list.map((json) => AppNotification(
+          id: json['_id'] ?? json['id'] ?? 'an_${DateTime.now().millisecondsSinceEpoch}',
+          title: json['title'] ?? 'Notification',
+          body: json['body'] ?? json['message'] ?? '',
+          time: DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now(),
+          type: json['type'] ?? 'system',
+          isRead: json['isRead'] ?? false,
+        )).toList();
+      }
+    } catch (_) {}
+  }
 
   void addNotification(AppNotification notification) {
     state = [notification, ...state];
@@ -116,5 +179,5 @@ class AdminNotificationNotifier extends StateNotifier<List<AppNotification>> {
 
 final adminNotificationProvider =
     StateNotifierProvider<AdminNotificationNotifier, List<AppNotification>>(
-  (ref) => AdminNotificationNotifier(),
+  (ref) => AdminNotificationNotifier(ref),
 );

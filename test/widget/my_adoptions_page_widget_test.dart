@@ -8,6 +8,8 @@ import 'package:petey_adoption_system/features/adminDashboard/presentation/pages
 import 'package:petey_adoption_system/features/adoption/presentation/pages/my_adoptions_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:petey_adoption_system/core/providers/notification_provider.dart';
+
 class TestPetsNotifier extends AdminPetsNotifier {
   TestPetsNotifier(super.ref) : super(autoFetch: false) {
     state = [];
@@ -18,6 +20,14 @@ class TestUsersNotifier extends AdminUsersNotifier {
   TestUsersNotifier(super.ref) : super(autoFetch: false) {
     state = [];
   }
+}
+
+class TestNotificationNotifier extends NotificationNotifier {
+  TestNotificationNotifier(super.ref) : super(autoFetch: false);
+}
+
+class TestAdminNotificationNotifier extends AdminNotificationNotifier {
+  TestAdminNotificationNotifier(super.ref) : super(autoFetch: false);
 }
 
 class TestAdoptionNotifier extends AdoptionRequestNotifier {
@@ -72,6 +82,8 @@ void main() {
         adoptionRequestProvider.overrideWith((ref) => TestAdoptionNotifier(ref)),
         adminPetsProvider.overrideWith((ref) => TestPetsNotifier(ref)),
         adminUsersProvider.overrideWith((ref) => TestUsersNotifier(ref)),
+        notificationProvider.overrideWith((ref) => TestNotificationNotifier(ref)),
+        adminNotificationProvider.overrideWith((ref) => TestAdminNotificationNotifier(ref)),
       ],
       child: const MaterialApp(
         home: MyAdoptionsPage(),

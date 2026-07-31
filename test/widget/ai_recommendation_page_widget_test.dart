@@ -5,6 +5,7 @@ import 'package:petey_adoption_system/core/providers/adoption_request_provider.d
 import 'package:petey_adoption_system/core/services/storage/user_session_service.dart';
 import 'package:petey_adoption_system/features/adminDashboard/presentation/pages/admin_pet_screen.dart';
 import 'package:petey_adoption_system/features/adminDashboard/presentation/pages/admin_user_screen.dart';
+import 'package:petey_adoption_system/core/providers/notification_provider.dart';
 import 'package:petey_adoption_system/features/ai/presentation/pages/ai_recommendation_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -26,6 +27,14 @@ class TestAdoptionNotifier extends AdoptionRequestNotifier {
   }
 }
 
+class TestNotificationNotifier extends NotificationNotifier {
+  TestNotificationNotifier(super.ref) : super(autoFetch: false);
+}
+
+class TestAdminNotificationNotifier extends AdminNotificationNotifier {
+  TestAdminNotificationNotifier(super.ref) : super(autoFetch: false);
+}
+
 void main() {
   late SharedPreferences prefs;
 
@@ -41,6 +50,8 @@ void main() {
         adminPetsProvider.overrideWith((ref) => TestPetsNotifier(ref)),
         adminUsersProvider.overrideWith((ref) => TestUsersNotifier(ref)),
         adoptionRequestProvider.overrideWith((ref) => TestAdoptionNotifier(ref)),
+        notificationProvider.overrideWith((ref) => TestNotificationNotifier(ref)),
+        adminNotificationProvider.overrideWith((ref) => TestAdminNotificationNotifier(ref)),
       ],
       child: const MaterialApp(
         home: AiRecommendationPage(),
