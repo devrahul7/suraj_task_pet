@@ -4,8 +4,8 @@ import 'package:flutter/foundation.dart';
 class ApiEndpoints {
   ApiEndpoints._();
 
-  static const bool isPhysicalDevice = true; // Enabled for physical phone on Wi-Fi
-  static const String compIpAddress = '192.168.1.65';
+  static const bool isPhysicalDevice = true; // Set to true for physical Android phone connected via Hotspot/Wi-Fi
+  static const String compIpAddress = '10.2.8.191'; // Computer IP address on local network/hotspot
 
   // Get the base URL based on the platform
   static String get baseUrl {

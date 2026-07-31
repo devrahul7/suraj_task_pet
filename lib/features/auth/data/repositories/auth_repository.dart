@@ -1,6 +1,7 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:petey_adoption_system/core/error/failures.dart';
 import 'package:petey_adoption_system/core/services/connectivity/network_info.dart';
@@ -92,7 +93,29 @@ class AuthRepository implements IAuthRepository {
 
   @override
   Future<Either<Failure, bool>> register(AuthEntity user) async {
+    final apiModel = AuthApiModel.fromEntity(user);
+    String? mongoId;
+
+    // 1. Register user directly in remote MongoDB database
+    try {
+      final remoteResult = await _authRemoteDatasource.register(apiModel);
+      if (remoteResult != null) {
+        mongoId = remoteResult.id;
+      }
+    } on DioException catch (e) {
+      if (e.response?.data is Map && e.response?.data.containsKey('message')) {
+        final msg = e.response?.data['message'].toString() ?? '';
+        if (msg.toLowerCase().contains('exists')) {
+          return Left(ApiFailure(message: msg));
+        }
+      }
+    } catch (e) {
+      debugPrint("[AuthRepository] Registration API error: $e");
+    }
+
+    // 2. Save to Hive local database storage for offline access
     final authModel = AuthHiveModel(
+      authId: mongoId,
       fullName: user.fullName,
       email: user.email,
       phoneNumber: user.phoneNumber,
@@ -103,22 +126,8 @@ class AuthRepository implements IAuthRepository {
       location: user.location,
     );
 
-    // Save to Hive local database storage first
     try {
       await _authDatasource.register(authModel);
-    } catch (_) {}
-
-    // Sync with remote MongoDB server if reachable
-    try {
-      final apiModel = AuthApiModel.fromEntity(user);
-      await _authRemoteDatasource.register(apiModel);
-    } on DioException catch (e) {
-      if (e.response?.data is Map && e.response?.data.containsKey('message')) {
-        final msg = e.response?.data['message'].toString() ?? '';
-        if (msg.toLowerCase().contains('exists')) {
-          return Left(ApiFailure(message: msg));
-        }
-      }
     } catch (_) {}
 
     return const Right(true);
