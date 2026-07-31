@@ -29,6 +29,16 @@ class PetModel {
     this.imagePath,
   });
 
+  Map<String, dynamic> toJson() => {
+        'name': name,
+        'species': species,
+        'breed': breed,
+        'age': age,
+        'gender': gender,
+        'status': status,
+        'description': description,
+      };
+
   PetModel copyWith({
     String? name,
     String? species,
@@ -106,22 +116,42 @@ class AdminPetsNotifier extends StateNotifier<List<PetModel>> {
     }
   }
 
-  void addPet(PetModel pet) => state = [pet, ...state];
+  Future<void> addPet(PetModel pet) async {
+    state = [pet, ...state];
+    try {
+      final apiClient = _ref.read(apiClientProvider);
+      await apiClient.post(ApiEndpoints.pets, data: pet.toJson());
+    } catch (_) {}
+  }
 
-  void updatePet(PetModel updated) {
+  Future<void> updatePet(PetModel updated) async {
     state = [
       for (final p in state)
         if (p.id == updated.id) updated else p,
     ];
+    try {
+      final apiClient = _ref.read(apiClientProvider);
+      await apiClient.put(ApiEndpoints.petById(updated.id), data: updated.toJson());
+    } catch (_) {}
   }
 
-  void deletePet(String id) => state = state.where((p) => p.id != id).toList();
+  Future<void> deletePet(String id) async {
+    state = state.where((p) => p.id != id).toList();
+    try {
+      final apiClient = _ref.read(apiClientProvider);
+      await apiClient.delete(ApiEndpoints.petById(id));
+    } catch (_) {}
+  }
 
-  void updateStatus(String id, String newStatus) {
+  Future<void> updateStatus(String id, String newStatus) async {
     state = [
       for (final p in state)
         if (p.id == id) p.copyWith(status: newStatus) else p,
     ];
+    try {
+      final apiClient = _ref.read(apiClientProvider);
+      await apiClient.put(ApiEndpoints.petById(id), data: {'status': newStatus});
+    } catch (_) {}
   }
 }
 

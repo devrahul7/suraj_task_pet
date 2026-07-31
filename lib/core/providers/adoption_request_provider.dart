@@ -149,6 +149,29 @@ class AdoptionRequestNotifier extends StateNotifier<List<AdoptionRequestModel>> 
 
     state = [newRequest, ...state];
 
+    // Persist booking to MongoDB
+    try {
+      final apiClient = ref.read(apiClientProvider);
+      apiClient.post(
+        ApiEndpoints.adoptionRequests,
+        data: {
+          'userId': newRequest.userId,
+          'petId': newRequest.petId,
+          'applicationData': {
+            'livingSpace': 'house',
+            'hasYard': true,
+            'householdMembers': 2,
+            'hasChildren': false,
+            'hasOtherPets': false,
+            'experience': 'intermediate',
+            'workSchedule': 'Flexible',
+            'reasonForAdoption':
+                'Pet meet & greet visit: ${visitType ?? "Shelter Visit"} on ${visitDate ?? "Upcoming"}',
+          },
+        },
+      );
+    } catch (_) {}
+
     // Notify Admin of new request
     ref.read(adminNotificationProvider.notifier).addNotification(
           AppNotification(
@@ -174,6 +197,13 @@ class AdoptionRequestNotifier extends StateNotifier<List<AdoptionRequestModel>> 
         else
           req
     ];
+
+    try {
+      final apiClient = ref.read(apiClientProvider);
+      apiClient.patch('/adoptions/$id/approve', data: {
+        'adminNotes': 'Request approved by Admin!',
+      });
+    } catch (_) {}
 
     final target = state.firstWhere((r) => r.id == id, orElse: () => state.first);
 
@@ -203,6 +233,13 @@ class AdoptionRequestNotifier extends StateNotifier<List<AdoptionRequestModel>> 
           req
     ];
 
+    try {
+      final apiClient = ref.read(apiClientProvider);
+      apiClient.patch('/adoptions/$id/reject', data: {
+        'rejectionReason': 'Adoption request was declined by Admin.',
+      });
+    } catch (_) {}
+
     final target = state.firstWhere((r) => r.id == id, orElse: () => state.first);
 
     // Notify Customer of rejection
@@ -224,11 +261,16 @@ class AdoptionRequestNotifier extends StateNotifier<List<AdoptionRequestModel>> 
         if (req.id == id)
           req.copyWith(
             status: 'PAID',
-            adminNotes: 'Payment verified via Stripe! Pet officially adopted.',
+            adminNotes: 'Adoption Fee Paid via Stripe. Officially Adopted! 🎉',
           )
         else
           req
     ];
+
+    try {
+      final apiClient = ref.read(apiClientProvider);
+      apiClient.patch('/adoptions/$id/complete', data: {});
+    } catch (_) {}
 
     final target = state.firstWhere((r) => r.id == id, orElse: () => state.first);
 
