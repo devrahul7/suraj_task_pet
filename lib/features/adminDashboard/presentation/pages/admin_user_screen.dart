@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:petey_adoption_system/core/api/api_client.dart';
+import 'package:petey_adoption_system/core/api/api_endpoints.dart';
+import 'package:petey_adoption_system/core/services/hive/hive_service.dart';
+import 'package:petey_adoption_system/features/auth/data/models/auth_hive_model.dart';
 
 class UserModel {
   final String id;
@@ -50,10 +53,22 @@ class AdminUsersNotifier extends StateNotifier<List<UserModel>> {
   }
 
   Future<void> _fetchUsersFromApi() async {
+    List<UserModel> loadedUsers = [];
+
+    // 1. Fetch from MongoDB Backend API
     try {
       final apiClient = _ref.read(apiClientProvider);
-      final response = await apiClient.get('/users');
-      if (response.statusCode == 200 && response.data != null) {
+      dynamic response;
+      try {
+        response = await apiClient.get('/admin/users');
+      } catch (_) {
+        try {
+          response = await apiClient.get('/auth/admin/users');
+        } catch (_) {
+          response = await apiClient.get('/users');
+        }
+      }
+      if (response != null && response.statusCode == 200 && response.data != null) {
         final data = response.data;
         List<dynamic> usersJson = [];
         if (data is Map<String, dynamic>) {
@@ -68,55 +83,123 @@ class AdminUsersNotifier extends StateNotifier<List<UserModel>> {
           usersJson = data;
         }
 
-        final remoteUsers = usersJson.map((json) {
+        for (final json in usersJson) {
           final roleStr = (json['role'] ?? 'USER').toString().toUpperCase();
-          return UserModel(
-            id: json['_id'] ?? json['id'] ?? 'u_${DateTime.now().millisecondsSinceEpoch}',
-            fullName: json['fullName'] ?? json['name'] ?? 'User',
-            email: json['email'] ?? 'user@petey.com',
-            phone: json['phone'] ?? json['phoneNumber'] ?? 'N/A',
-            role: roleStr,
-            isActive: json['isActive'] ?? true,
-            createdAt: DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now(),
+          loadedUsers.add(
+            UserModel(
+              id: json['_id'] ?? json['id'] ?? 'u_${DateTime.now().millisecondsSinceEpoch}',
+              fullName: json['fullName'] ?? json['name'] ?? 'User',
+              email: json['email'] ?? 'user@petey.com',
+              phone: json['phone'] ?? json['phoneNumber'] ?? 'N/A',
+              role: roleStr,
+              isActive: json['isActive'] ?? true,
+              createdAt: DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now(),
+            ),
           );
-        }).toList();
-
-        // Always preserve master admin account
-        final masterAdmin = UserModel(
-          id: 'u3',
-          fullName: 'Admin User',
-          email: 'admin@petey.com',
-          phone: '9800000000',
-          role: 'ADMIN',
-          createdAt: DateTime.now().subtract(const Duration(days: 30)),
-        );
-
-        final hasAdmin = remoteUsers.any((u) => u.email.toLowerCase() == 'admin@petey.com' || u.role == 'ADMIN');
-        if (!hasAdmin) {
-          remoteUsers.add(masterAdmin);
         }
-
-        state = remoteUsers;
       }
-    } catch (_) {
-      // Backend offline -> keep initial state fallback
+    } catch (_) {}
+
+    // 2. Fetch from local Hive database
+    try {
+      final hiveService = _ref.read(hiveServiceProvider);
+      final hiveUsers = hiveService.getAllUsers();
+      for (final hu in hiveUsers) {
+        if (!loadedUsers.any((u) => u.email.toLowerCase() == hu.email.toLowerCase())) {
+          loadedUsers.add(
+            UserModel(
+              id: hu.authId ?? 'u_${hu.email}',
+              fullName: hu.fullName,
+              email: hu.email,
+              phone: hu.phoneNumber,
+              role: hu.email.toLowerCase() == 'admin@petey.com' ? 'ADMIN' : 'USER',
+              createdAt: DateTime.now(),
+            ),
+          );
+        }
+      }
+    } catch (_) {}
+
+    // 3. Always guarantee master admin account existence
+    final masterAdmin = UserModel(
+      id: 'u3',
+      fullName: 'PetEy Admin',
+      email: 'admin@petey.com',
+      phone: '9800000000',
+      role: 'ADMIN',
+      createdAt: DateTime.now().subtract(const Duration(days: 30)),
+    );
+
+    final hasAdmin = loadedUsers.any((u) => u.email.toLowerCase() == 'admin@petey.com');
+    if (!hasAdmin) {
+      loadedUsers.insert(0, masterAdmin);
     }
+
+    state = loadedUsers;
   }
 
-  void addUser(UserModel user) => state = [user, ...state];
+  Future<void> addUser(UserModel user) async {
+    state = [user, ...state];
 
-  void updateUser(UserModel updated) {
+    // Persist to MongoDB
+    try {
+      final apiClient = _ref.read(apiClientProvider);
+      await apiClient.post(
+        ApiEndpoints.userRegister,
+        data: {
+          'fullName': user.fullName,
+          'username': user.email.split('@').first,
+          'email': user.email,
+          'password': 'User123!',
+          'phoneNumber': user.phone,
+          'role': user.role,
+        },
+      );
+    } catch (_) {}
+
+    // Persist to Hive
+    try {
+      final hiveService = _ref.read(hiveServiceProvider);
+      await hiveService.registerUser(
+        AuthHiveModel(
+          authId: user.id,
+          fullName: user.fullName,
+          email: user.email,
+          phoneNumber: user.phone,
+          username: user.email.split('@').first,
+          password: 'User123!',
+        ),
+      );
+    } catch (_) {}
+  }
+
+  Future<void> updateUser(UserModel updated) async {
     state = [
       for (final u in state)
         if (u.id == updated.id) updated else u
     ];
+
+    try {
+      final apiClient = _ref.read(apiClientProvider);
+      await apiClient.put('/admin/users/${updated.id}', data: {
+        'fullName': updated.fullName,
+        'email': updated.email,
+        'phoneNumber': updated.phone,
+        'role': updated.role,
+      });
+    } catch (_) {}
   }
 
-  void deleteUser(String id) {
-    // Prevent deletion of ADMIN accounts
+  Future<void> deleteUser(String id) async {
     final user = state.firstWhere((u) => u.id == id, orElse: () => state.first);
-    if (user.role == 'ADMIN') return; // guard: admin cannot be deleted
+    if (user.role == 'ADMIN' || user.email.toLowerCase() == 'admin@petey.com') return;
+
     state = state.where((u) => u.id != id).toList();
+
+    try {
+      final apiClient = _ref.read(apiClientProvider);
+      await apiClient.delete('/admin/users/$id');
+    } catch (_) {}
   }
 
   void toggleStatus(String id) {

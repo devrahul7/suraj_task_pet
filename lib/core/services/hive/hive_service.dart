@@ -73,6 +73,8 @@ class HiveService {
   Box<AuthHiveModel> get _authBox =>
       Hive.box<AuthHiveModel>(HiveTableConstant.authTable);
 
+  List<AuthHiveModel> getAllUsers() => _authBox.values.toList();
+
   //Register
   Future<AuthHiveModel> registerUser(AuthHiveModel model) async {
     final key = (model.authId != null && model.authId!.isNotEmpty)

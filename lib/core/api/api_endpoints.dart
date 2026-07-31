@@ -30,10 +30,10 @@ class ApiEndpoints {
   // static const String userLogout = '/users/logout';
   // static const String checkEmail = '/users/check-email';
 
-  static const String userLogin = '/users/login';
-  static const String userRegister = '/users/register';
-  static const String userLogout = '/users/logout';
-  static const String checkEmail = '/users/check-email';
+  static const String userLogin = '/auth/login';
+  static const String userRegister = '/auth/register';
+  static const String userLogout = '/auth/logout';
+  static const String checkEmail = '/auth/check-email';
 
   // ============Image Upload Endpoint=================
   // static const String uploadImage = '/users/upload-profile-image';
